@@ -43,11 +43,11 @@ const Postgres_Driver = {
 
         if ( exists && exists.length ) {
             const update_statement = pgp.helpers.update( mapped_object, mapped_object_data_keys, this.options.table ) + ` WHERE "${ this.options.id_field }"="${ mapped_object[ this.options.id_field ] }"`;
-            await this.db.one( update_statement );
+            await this.db.none( update_statement );
             return;
         } else {
             const insert_statement = pgp.helpers.insert( mapped_object, null, this.options.table );
-            await this.db.one( insert_statement );
+            await this.db.none( insert_statement );
             return;
         }
     },
