@@ -75,9 +75,6 @@ module.exports = {
             readable: true,
             id_field: 'id',
             db: {
-                user: null,
-                database: null,
-                password: null,
                 host: 'localhost',
                 port: 5432,
                 ssl: false,
