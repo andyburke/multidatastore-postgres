@@ -27,7 +27,7 @@ const Postgres_Driver = {
     },
 
     stop: async function() {
-        await pgp.end();
+        this.db && this.db.$pool && await this.db.$pool.end();
     },
 
     put: async function( object ) {
