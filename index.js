@@ -41,12 +41,14 @@ const Postgres_Driver = {
             id: mapped_object[ this.options.id_field ]
         } );
 
-        if ( exists ) {
+        if ( exists && exists.length ) {
             const update_statement = pgp.helpers.update( mapped_object, mapped_object_data_keys, this.options.table ) + ` WHERE "${ this.options.id_field }"="${ mapped_object[ this.options.id_field ] }"`;
-            return await this.db.one( update_statement );
+            await this.db.one( update_statement );
+            return;
         } else {
             const insert_statement = pgp.helpers.insert( mapped_object, null, this.options.table );
-            return await this.db.one( insert_statement );
+            await this.db.one( insert_statement );
+            return;
         }
     },
 
@@ -57,7 +59,7 @@ const Postgres_Driver = {
             id: id
         } );
 
-        const result = mapped_result ? this.options.unmapper( mapped_result ) : null;
+        const result = mapped_result && mapped_result.length ? this.options.unmapper( mapped_result[ 0 ] ) : null;
         return result;
     },
 
