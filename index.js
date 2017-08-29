@@ -4,9 +4,7 @@ const extend = require( 'extend' );
 const pgp = require( 'pg-promise' )();
 
 const Postgres_Driver = {
-    init: async function( options ) {
-        this.options = options;
-
+    init: async function() {
         this.db = pgp( this.options.db );
 
         if ( !this.options.table ) {
@@ -74,8 +72,8 @@ const Postgres_Driver = {
 module.exports = {
     create: function( _options ) {
         const options = extend( true, {
-            id_field: 'id',
             readable: true,
+            id_field: 'id',
             db: {
                 user: null,
                 database: null,
@@ -83,8 +81,7 @@ module.exports = {
                 host: 'localhost',
                 port: 5432,
                 ssl: false,
-                idleTimeoutMillis: 30000,
-                max: 20
+                idleTimeoutMillis: 30000
             },
             table_create_sql: null
         }, _options );
