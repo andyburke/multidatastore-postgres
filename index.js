@@ -28,13 +28,14 @@ const Postgres_Driver = {
 
     stop: async function() {
         this.db && this.db.$pool && await this.db.$pool.end();
+        this.db = null;
     },
 
     put: async function( object ) {
         const mapped_object = this.options.mapper( object );
         const mapped_object_data_keys = Object.keys( mapped_object ).sort().filter( key => key !== this.options.id_field );
 
-        const exists = await this.db.one( 'select 1 from ${table:name} where ${id_field:name}=${id}', {
+        const exists = await this.db.any( 'select 1 from ${table:name} where ${id_field:name}=${id}', {
             table: this.options.table,
             id_field: this.options.id_field,
             id: mapped_object[ this.options.id_field ]
@@ -50,7 +51,7 @@ const Postgres_Driver = {
     },
 
     get: async function( id ) {
-        const mapped_result = await this.db.one( 'SELECT * FROM ${table:name} WHERE ${id_field:name}=${id}', {
+        const mapped_result = await this.db.any( 'SELECT * FROM ${table:name} WHERE ${id_field:name}=${id}', {
             table: this.options.table,
             id_field: this.options.id_field,
             id: id
@@ -61,7 +62,7 @@ const Postgres_Driver = {
     },
 
     del: async function( id ) {
-        await this.db.none( 'DELETE FROM ${table:name} WHERE ${id_field:name}=${id}', {
+        await this.db.any( 'DELETE FROM ${table:name} WHERE ${id_field:name}=${id}', {
             table: this.options.table,
             id_field: this.options.id_field,
             id: id
