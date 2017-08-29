@@ -42,7 +42,7 @@ const Postgres_Driver = {
         } );
 
         if ( exists && exists.length ) {
-            const update_statement = pgp.helpers.update( mapped_object, mapped_object_data_keys, this.options.table ) + ` WHERE "${ this.options.id_field }"="${ mapped_object[ this.options.id_field ] }"`;
+            const update_statement = pgp.helpers.update( mapped_object, mapped_object_data_keys, this.options.table ) + ` WHERE "${ this.options.id_field }"='${ mapped_object[ this.options.id_field ] }'`;
             await this.db.none( update_statement );
             return;
         } else {
