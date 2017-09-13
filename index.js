@@ -83,7 +83,9 @@ module.exports = {
                 ssl: false,
                 idleTimeoutMillis: 30000
             },
-            table_create_sql: null
+            table_create_sql: null,
+            mapper: null,
+            unmapper: null
         }, _options );
 
         const instance = Object.assign( {}, Postgres_Driver );
