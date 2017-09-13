@@ -32,7 +32,7 @@ const Postgres_Driver = {
     },
 
     put: async function( object ) {
-        const mapped_object = this.options.mapper( object );
+        const mapped_object = await this.options.mapper( object );
         const mapped_object_data_keys = Object.keys( mapped_object ).sort().filter( key => key !== this.options.id_field );
 
         const exists = await this.db.any( 'select 1 from ${table:name} where ${id_field:name}=${id}', {
@@ -59,7 +59,7 @@ const Postgres_Driver = {
             id: id
         } );
 
-        const result = mapped_result && mapped_result.length ? this.options.unmapper( mapped_result[ 0 ] ) : null;
+        const result = mapped_result && mapped_result.length ? await this.options.unmapper( mapped_result[ 0 ] ) : null;
         return result;
     },
 
@@ -74,7 +74,7 @@ const Postgres_Driver = {
 
 module.exports = {
     create: function( _options ) {
-        const options = extend( true, {
+        const options = extend( true, {}, {
             readable: true,
             id_field: 'id',
             db: {
