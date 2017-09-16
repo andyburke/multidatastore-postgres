@@ -31,11 +31,11 @@ const Postgres_Driver = {
         this.db = null;
     },
 
-    put: async function( object ) {
+    put: async function( object, options ) {
         const mapped_object = await this.options.mapper( object );
         const mapped_object_data_keys = Object.keys( mapped_object ).sort().filter( key => key !== this.options.id_field );
 
-        const exists = await this.db.any( 'select 1 from ${table:name} where ${id_field:name}=${id}', {
+        const exists = ( options && options.skip_exists_check ) ? false : await this.db.any( 'select 1 from ${table:name} where ${id_field:name}=${id}', {
             table: this.options.table,
             id_field: this.options.id_field,
             id: mapped_object[ this.options.id_field ]
