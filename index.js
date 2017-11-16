@@ -59,7 +59,7 @@ const Postgres_Driver = {
         } );
 
         const processed = rows && rows.length ? rows[ 0 ] : null;
-        const result = await this.options.processors.map( processor => processor.deserialize ).reduceRight( async ( _object, deserialize ) => {
+        const object = await this.options.processors.map( processor => processor.deserialize ).reduceRight( async ( _object, deserialize ) => {
             if ( !deserialize ) {
                 return _object;
             }
@@ -67,7 +67,7 @@ const Postgres_Driver = {
             return await deserialize( _object );
         }, processed );
 
-        return result;
+        return object;
     },
 
     del: async function( id ) {
