@@ -11,14 +11,6 @@ const Postgres_Driver = {
             throw new Error( 'Must specify a table!' );
         }
 
-        if ( !this.options.mapper ) {
-            throw new Error( 'Must specify a mapper!' );
-        }
-
-        if ( !this.options.unmapper ) {
-            throw new Error( 'Must specify an unmapper!' );
-        }
-
         if ( !this.options.table_create_sql ) {
             return;
         }
@@ -32,34 +24,49 @@ const Postgres_Driver = {
     },
 
     put: async function( object, options ) {
-        const mapped_object = await this.options.mapper( object );
-        const mapped_object_data_keys = Object.keys( mapped_object ).sort().filter( key => key !== this.options.id_field );
+        const processed = await this.options.processors.map( processor => processor.serialize ).reduce( async ( _object, serialize ) => {
+            if ( !serialize ) {
+                return _object;
+            }
+
+            return await serialize( _object );
+        }, object );
+
+        const data_keys = Object.keys( processed ).sort().filter( key => key !== this.options.id_field );
 
         const exists = ( options && options.skip_exists_check ) ? false : await this.db.any( 'select 1 from ${table:name} where ${id_field:name}=${id}', {
             table: this.options.table,
             id_field: this.options.id_field,
-            id: mapped_object[ this.options.id_field ]
+            id: processed[ this.options.id_field ]
         } );
 
         if ( exists && exists.length ) {
-            const update_statement = pgp.helpers.update( mapped_object, mapped_object_data_keys, this.options.table ) + ` WHERE "${ this.options.id_field }"='${ mapped_object[ this.options.id_field ] }'`;
+            const update_statement = pgp.helpers.update( processed, data_keys, this.options.table ) + ` WHERE "${ this.options.id_field }"='${ processed[ this.options.id_field ] }'`;
             await this.db.none( update_statement );
             return;
         } else {
-            const insert_statement = pgp.helpers.insert( mapped_object, null, this.options.table );
+            const insert_statement = pgp.helpers.insert( processed, null, this.options.table );
             await this.db.none( insert_statement );
             return;
         }
     },
 
     get: async function( id ) {
-        const mapped_result = await this.db.any( 'SELECT * FROM ${table:name} WHERE ${id_field:name}=${id}', {
+        const rows = await this.db.any( 'SELECT * FROM ${table:name} WHERE ${id_field:name}=${id}', {
             table: this.options.table,
             id_field: this.options.id_field,
             id: id
         } );
 
-        const result = mapped_result && mapped_result.length ? await this.options.unmapper( mapped_result[ 0 ] ) : null;
+        const processed = rows && rows.length ? rows[ 0 ] : null;
+        const result = await this.options.processors.map( processor => processor.deserialize ).reduceRight( async ( _object, deserialize ) => {
+            if ( !deserialize ) {
+                return _object;
+            }
+
+            return await deserialize( _object );
+        }, processed );
+
         return result;
     },
 
@@ -84,8 +91,7 @@ module.exports = {
                 idleTimeoutMillis: 30000
             },
             table_create_sql: null,
-            mapper: null,
-            unmapper: null
+            processors: []
         }, _options );
 
         const instance = Object.assign( {}, Postgres_Driver );
