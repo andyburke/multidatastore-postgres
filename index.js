@@ -24,28 +24,20 @@ const Postgres_Driver = {
     },
 
     put: async function( object, options ) {
-        const processed = await this.options.processors.map( processor => processor.serialize ).reduce( async ( _object, serialize ) => {
-            if ( !serialize ) {
-                return _object;
-            }
-
-            return await serialize( _object );
-        }, object );
-
-        const data_keys = Object.keys( processed ).sort().filter( key => key !== this.options.id_field );
+        const data_keys = Object.keys( object ).sort().filter( key => key !== this.options.id_field );
 
         const exists = ( options && options.skip_exists_check ) ? false : await this.db.any( 'select 1 from ${table:name} where ${id_field:name}=${id}', {
             table: this.options.table,
             id_field: this.options.id_field,
-            id: processed[ this.options.id_field ]
+            id: object[ this.options.id_field ]
         } );
 
         if ( exists && exists.length ) {
-            const update_statement = pgp.helpers.update( processed, data_keys, this.options.table ) + ` WHERE "${ this.options.id_field }"='${ processed[ this.options.id_field ] }'`;
+            const update_statement = pgp.helpers.update( object, data_keys, this.options.table ) + ` WHERE "${ this.options.id_field }"='${ object[ this.options.id_field ] }'`;
             await this.db.none( update_statement );
             return;
         } else {
-            const insert_statement = pgp.helpers.insert( processed, null, this.options.table );
+            const insert_statement = pgp.helpers.insert( object, null, this.options.table );
             await this.db.none( insert_statement );
             return;
         }
@@ -58,14 +50,7 @@ const Postgres_Driver = {
             id: id
         } );
 
-        const processed = rows && rows.length ? rows[ 0 ] : null;
-        const object = await this.options.processors.map( processor => processor.deserialize ).reduceRight( async ( _object, deserialize ) => {
-            if ( !deserialize ) {
-                return _object;
-            }
-
-            return await deserialize( _object );
-        }, processed );
+        const object = rows && rows.length ? rows[ 0 ] : null;
 
         return object;
     },
