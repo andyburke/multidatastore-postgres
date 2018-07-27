@@ -3,9 +3,25 @@
 const extend = require( 'extend' );
 const pgp = require( 'pg-promise' )();
 
+const connections = {};
+
+function get_connection_id( db_info ) {
+    return Object.keys( db_info ).sort().map( key => `${ key }:${ db_info[ key ] }` ).join( ';' );
+}
+
 const Postgres_Driver = {
     init: async function() {
-        this.db = pgp( this.options.db );
+        const connection_id = get_connection_id( this.options.db );
+        let existing_connection = connections[ connection_id ];
+        if ( !existing_connection ) {
+            existing_connection = {
+                connection: pgp( this.options.db ),
+                refcount: 0
+            };
+        }
+        
+        existing_connection.refcount++;
+        this.db = existing_connection.connection;
 
         if ( !this.options.table ) {
             throw new Error( 'Must specify a table!' );
@@ -19,7 +35,19 @@ const Postgres_Driver = {
     },
 
     stop: async function() {
-        this.db && this.db.$pool && await this.db.$pool.end();
+        const connection_id = get_connection_id( this.options.db );
+        const existing_connection = connections[ connection_id ];
+        if ( !existing_connection ) {
+            return;
+        }
+
+        existing_connection.refcount--;
+
+        if ( existing_connection.refcount === 0 ) {
+            this.db && this.db.$pool && await this.db.$pool.end();
+            delete connections[ connection_id ];
+        }
+
         this.db = null;
     },
 
