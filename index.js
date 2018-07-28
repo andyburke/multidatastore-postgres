@@ -18,6 +18,7 @@ const Postgres_Driver = {
                 connection: pgp( this.options.db ),
                 refcount: 0
             };
+            connections[ connection_id ] = existing_connection;
         }
         
         existing_connection.refcount++;
