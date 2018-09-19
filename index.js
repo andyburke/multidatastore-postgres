@@ -53,12 +53,12 @@ const Postgres_Driver = {
     },
 
     put: async function( object ) {
-        const data_keys = Object.keys( object ).sort().filter( key => key !== this.options.id_field );
-        const cs = new pgp.helpers.ColumnSet( data_keys, {
+        const cs = new pgp.helpers.ColumnSet( Object.keys( object ).sort(), {
             table: this.options.table
         } );
         const upsert_statement = pgp.helpers.insert( object, cs ) + ` ON CONFLICT(${ this.options.id_field }) DO UPDATE SET ` + cs.assignColumns( {
-            from: 'EXCLUDED'
+            from: 'EXCLUDED',
+            skip: this.options.id_field
         } );
         await this.db.none( upsert_statement );
     },

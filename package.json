@@ -1,6 +1,6 @@
 {
   "name": "multidatastore-postgres",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "multi data store postgres driver",
   "contributors": [
     "Andy Burke <andy.burke@mailbox.earth> (https://github.com/andyburke)"
