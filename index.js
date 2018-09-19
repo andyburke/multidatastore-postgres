@@ -52,24 +52,15 @@ const Postgres_Driver = {
         this.db = null;
     },
 
-    put: async function( object, options ) {
+    put: async function( object ) {
         const data_keys = Object.keys( object ).sort().filter( key => key !== this.options.id_field );
-
-        const exists = ( options && options.skip_exists_check ) ? false : await this.db.any( 'select 1 from ${table:name} where ${id_field:name}=${id}', {
-            table: this.options.table,
-            id_field: this.options.id_field,
-            id: object[ this.options.id_field ]
+        const cs = new pgp.helpers.ColumnSet( data_keys, {
+            table: this.options.table
         } );
-
-        if ( exists && exists.length ) {
-            const update_statement = pgp.helpers.update( object, data_keys, this.options.table ) + ` WHERE "${ this.options.id_field }"='${ object[ this.options.id_field ] }'`;
-            await this.db.none( update_statement );
-            return;
-        } else {
-            const insert_statement = pgp.helpers.insert( object, null, this.options.table );
-            await this.db.none( insert_statement );
-            return;
-        }
+        const upsert_statement = pgp.helpers.insert( object, cs ) + ` ON CONFLICT(${ this.options.id_field }) DO UPDATE SET ` + cs.assignColumns( {
+            from: 'EXCLUDED'
+        } );
+        await this.db.none( upsert_statement );
     },
 
     get: async function( id ) {
